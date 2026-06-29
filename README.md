@@ -1,98 +1,85 @@
-# 🧬 Analysis Template
+# Project 15 — Mapping the Spatial Cellular Architecture of the Brain
 
-A notebook-first template for single-cell/spatial analysis projects. Uses [pixi](https://pixi.sh) for environment management.
+**CAJAL Neuromics 2026 (Bordeaux).** Reconstruct the spatial cellular architecture of the
+brain from high-plex, image-based spatial transcriptomics: QC → cell segmentation →
+cell-type annotation by label transfer from a scRNA-seq reference atlas → spatial niches →
+region-specific cell–cell communication. Notebook-first, [pixi](https://pixi.sh)-managed,
+runs on the IFB Core Cluster.
 
-> If you're building a reusable Python library, use the [scverse cookiecutter](https://github.com/scverse/cookiecutter-scverse) instead.
+**Links:** [IFB docs](https://doc.cluster.france-bioinformatique.fr/) ·
+[OnDemand (run notebooks)](https://ondemand.cluster.france-bioinformatique.fr) ·
+[pixi](https://pixi.sh) · [scanpy](https://scanpy.readthedocs.io) ·
+[squidpy](https://squidpy.readthedocs.io) · [spatialdata](https://spatialdata.scverse.org)
 
----
+## 0. One-time access
 
-## 🚀 Getting Started
+- **Cluster login** (SSH key) — sent to you separately by the organisers.
+- **GitHub CLI**, then log in:
+  ```bash
+  curl -sS https://webi.sh/gh | sh      # installs gh, no sudo
+  gh auth login                          # GitHub.com -> HTTPS -> web browser
+  ```
+- **Fork this repo** to your own GitHub account (top-right on GitHub) — you'll push your
+  own analysis there.
 
-**You've initialized a new repo from this template—great!** Follow these steps to set up your project.
-
-### Step 1: Install pixi
-
-*Skip this if you already have pixi installed.*
-
-```bash
-# macOS / Linux
-curl -fsSL https://pixi.sh/install.sh | bash
-
-# Or with Homebrew (macOS)
-brew install pixi
-```
-
-Restart your terminal after installation. See [pixi installation docs](https://pixi.sh/latest/#installation) for Windows and other options.
-
-### Step 1b: Install GitHub CLI (optional)
-
-*Recommended if you're working on a remote server and need to authenticate with GitHub.*
+## 1. Get the code (in your cluster home)
 
 ```bash
-# macOS
-brew install gh
-
-# Linux (no sudo required)
-curl -sS https://webi.sh/gh | sh
+mkdir -p ~/github && cd ~/github
+gh repo clone <your-username>/cajal-project15-spatial-brain
+cd cajal-project15-spatial-brain
 ```
 
-Then authenticate: `gh auth login`. See [GitHub CLI installation docs](https://github.com/cli/cli#installation) for more options.
-
-### Step 2: Clone your repo locally
+## 2. Set up the environment — one command
 
 ```bash
-git clone <your-repo-url>
-cd <your-project-name>
+bash cluster_setup.sh
 ```
 
-The URL depends on your authentication method:
-- **HTTPS**: `https://github.com/owner/repo.git`
-- **SSH**: `git@github.com:owner/repo.git`
-- **GitHub CLI**: `gh repo clone owner/repo`
+Installs pixi (if needed) and builds the project environment. **Why a script?** The cluster
+home directory has a 100,000-*file* quota that a scientific environment would blow, so the
+script puts the environment and caches on the large **project filesystem**, then registers a
+Jupyter kernel and the git hooks. A few minutes the first time.
 
-### Step 3: Customize the template
+## 3. Run your analysis — Open OnDemand JupyterLab (recommended)
 
-The template ships with a placeholder package name (`myanalysis`) and project
-name (`analysis-template`). Rename them in one shot with the included script
-(stdlib-only, so run it with plain `python` *before* installing the env):
+1. [ondemand.cluster.france-bioinformatique.fr](https://ondemand.cluster.france-bioinformatique.fr)
+   → Interactive Apps → **JupyterLab**.
+2. Request resources (account `tp_2630_ubordeaux_neuromics_184418`, partition `fast`, a few
+   CPUs / 16 GB) and launch.
+3. Open a notebook → select the **"Spatial Brain (Project 15)"** kernel.
 
-```bash
-python scripts/rename_package.py myproject
-# or set the Jupyter kernel display name explicitly:
-python scripts/rename_package.py myproject --display-name "My Project"
-```
+> Don't run `jupyter lab` on the login node. (VS Code on a compute node is also possible —
+> ask Marius.)
 
-This renames `src/myanalysis/` → `src/myproject/` and updates every reference in
-`pyproject.toml`, `pixi.toml` (package + workspace + kernel name), `tests/`, and
-the notebooks under `analysis/`.
+## 4. Daily workflow
 
-Then finish by hand:
+- Notebooks live in `analysis/`, named `INITIALS-YYYY-MM-DD_description.ipynb`.
+- Notebook outputs are auto-stripped from git (nbstripout) — rendered locally, clean in git.
+- Commit & push to **your fork**:
+  ```bash
+  git add -A && git commit -m "..." && git push
+  ```
+- Add a package: `pixi add <pkg>` (conda-forge) or `pixi add --pypi <pkg>`, then commit
+  `pixi.toml` + `pixi.lock` so everyone stays in sync.
 
-| File | What to change |
-|------|----------------|
-| `pixi.toml` | Update `[workspace]` `description` and `authors` |
-| `README.md` | Replace with your own project documentation (Step 6 / later) |
+## 5. Data
 
-> Doing it manually instead? The placeholder `myanalysis` appears in
-> `pyproject.toml`, the `src/myanalysis/` folder name, `pixi.toml`
-> (`[pypi-dependencies]`), `tests/test_basic.py`, and the demo notebook; the
-> project name `analysis-template` and the kernel `display-name` live in the
-> `pixi.toml` `[tasks]` `install-kernel` command. The script handles all of them.
+Raw data is staged once in a shared location (not copied per student); your repo's `data/`
+holds smaller processed outputs. Paths are exposed via `from spatialbrain import FilePaths`.
+*(Specifics to be added.)*
 
-### Step 4: Set up the environment
+## 6. GPU
 
-```bash
-pixi install                   # create environment from pixi.toml
-pixi run install-hooks         # pre-commit hooks + notebook output-stripping filter
-pixi run install-kernel        # register Jupyter kernel
-```
+Once the GPU partition is enabled for the course: `pixi install -e gpu` (CUDA build of JAX +
+rapids-singlecell).
 
-> `install-hooks` also sets up the [nbstripout](https://github.com/kynan/nbstripout)
-> git filter. Notebook outputs are then stripped from commits automatically while
-> staying in your working copy. **Run it once in every clone** (including remote
-> servers and worktrees), or outputs may slip into git.
+## Reference
 
-💡 **Tip**: Use `pixi shell` to enter the environment interactively—then you can run commands directly without the `pixi run` prefix.
+- **Environment:** `pixi.toml` (+ `pixi.lock` for exact, reproducible versions).
+- **Helper package:** `src/spatialbrain/` — `FilePaths` for project data paths.
+- Single-cell best practices: <https://www.sc-best-practices.org/>
+refix.
 
 ### Step 5: Verify your setup
 
