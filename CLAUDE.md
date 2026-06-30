@@ -15,5 +15,14 @@ Single-cell / spatial analysis on the IFB Core Cluster, managed with pixi.
 - pixi: deps in `pixi.toml`, pinned in `pixi.lock`. Add packages PyPI-first
   (`pixi add --pypi <pkg>`; conda only for hard-to-build compiled deps), then commit both files.
 
+## Paper & reference code
+- Dataset paper: Wang et al., *Nature* 647:169–178 (2025), "Molecular and cellular dynamics of
+  the developing human neocortex" (Kriegstein lab) — DOI 10.1038/s41586-024-08351-7. snMultiome
+  + MERSCOPE spatial. **Withheld from students until the Level 2 reveal.**
+- Authors' analysis code: https://github.com/complexdisease/Human_Cortex_Dev_Multiome (mostly R;
+  spatial work — neighbourhood enrichment, NCEM — in `MERFISH_nhood_and_NCEM/`, GRNs in
+  `SCENICplus/`). Reference for reproducing Fig. 2, not to hand to students before L2.
+- Teaching outline / level plan: `docs/teaching_outline.md`.
+
 ## Docs
 - IFB cluster: https://doc.cluster.france-bioinformatique.fr/  ·  Project setup: README.md

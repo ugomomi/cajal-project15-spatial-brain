@@ -3,7 +3,7 @@ name = "spatialbrain"
 version = "0.1.0"
 description = "CAJAL Neuromics 2026 — Project 15: Mapping the Spatial Cellular Architecture of the Brain"
 authors = ["Marius Lange <marius131119@gmail.com>"]
-channels = ["conda-forge"]
+channels = ["conda-forge", "bioconda"]
 platforms = ["osx-arm64", "linux-64"]
 
 [tasks]
@@ -26,6 +26,9 @@ slepc4py = "*"
 # Shapely from conda to avoid pygeos build issues
 shapely = "*"
 
+# Proseg transcript-based segmentation (Rust binary) — bioconda; lands `proseg` on PATH
+rust-proseg = ">=3.1"
+
 [pypi-dependencies]
 # Compatibility fix: cuML (rapids dependency) incompatible with sklearn 1.8
 # https://github.com/rapidsai/cuml/issues/6426
@@ -38,9 +41,16 @@ jax = "<0.9.0"
 # Core single-cell stack
 scanpy = ">=1.10"
 squidpy = "*"
-scvi-tools = "*"
+# diagvi extra pulls torch-geometric (DiagVI label transfer, L2)
+scvi-tools = { version = "*", extras = ["diagvi"] }
 cellrank = "*"
-torch = "*"
+# Pin below 2.9: scvi-tools/lightning don't support torch 2.12's _dynamo API
+# (import scvi breaks). Linux gets the CPU wheel (see target table below); macOS
+# uses the default wheel here.
+torch = ">=2.4,<2.9"
+# torchvision is pulled transitively; it must match torch exactly (else a
+# circular-import / "no attribute 'extension'" failure), so pin + CPU-wheel it too.
+torchvision = ">=0.19,<0.24"
 
 # Notebook workflow
 jupyterlab = "*"
@@ -68,7 +78,16 @@ spatialdata-plot = ">=0.4.0, <0.5"
 cellpose = ">=4.2.1.1, <5"
 liana = ">=1.8.0, <2"
 decoupler = ">=2.1.6, <3"
-sopa = ">=2.2.9, <3"
+sopa = { version = ">=2.2.9, <3", extras = ["baysor"] }   # baysor extra -> toml, loompy
+dask = { version = "*", extras = ["array"] }              # sopa requires dask[array]
+
+# Linux default env: CPU torch from PyTorch's CPU index (avoids the CUDA wheel that
+# drags in libs breaking conda-numpy's libstdc++ at runtime on compute nodes). macOS
+# uses the default wheel above. When cluster GPU access lands, add a CUDA torch
+# override under the `gpu` feature.
+[target.linux-64.pypi-dependencies]
+torch = { version = ">=2.4,<2.9", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.19,<0.24", index = "https://download.pytorch.org/whl/cpu" }
 
 # GPU stack — only materialized in the `gpu` environment (Linux + CUDA 12).
 # The default environment is CPU-only and is what CI installs; macOS local also

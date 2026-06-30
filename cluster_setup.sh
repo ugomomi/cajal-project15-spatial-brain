@@ -43,6 +43,26 @@ export UV_CACHE_DIR="$PIXI_BASE/uv-cache"
 export TMPDIR="$PIXI_BASE/tmp"
 export PRE_COMMIT_HOME="$PIXI_BASE/pre-commit"
 
+# --- durably redirect caches off home for NON-interactive shells too ---
+# Slurm batch jobs and `bash -c` don't source ~/.bashrc, so the exports above never
+# reach them and pixi/uv/conda fall back to home (~100k-inode quota) — a big install
+# (e.g. torch) then blows it. These config-file / symlink redirects are read by the
+# tools in *every* context, interactive or not.
+mkdir -p "$PIXI_BASE/cache" "$PIXI_BASE/uv-cache" "$PIXI_BASE/conda/pkgs" \
+         "$PIXI_BASE/conda/envs" "$HOME/.cache/rattler" "$HOME/.config/uv"
+# pixi/rattler default cache dir has no config key for its root → symlink it
+if [ ! -L "$HOME/.cache/rattler/cache" ]; then
+  rm -rf "$HOME/.cache/rattler/cache"
+  ln -s "$PIXI_BASE/cache" "$HOME/.cache/rattler/cache"
+fi
+# uv reads ~/.config/uv/uv.toml everywhere
+printf 'cache-dir = "%s"\n' "$PIXI_BASE/uv-cache" > "$HOME/.config/uv/uv.toml"
+# conda reads ~/.condarc everywhere (create-if-absent — don't clobber existing config)
+if [ ! -f "$HOME/.condarc" ]; then
+  printf 'pkgs_dirs:\n  - %s\nenvs_dirs:\n  - %s\n' \
+    "$PIXI_BASE/conda/pkgs" "$PIXI_BASE/conda/envs" > "$HOME/.condarc"
+fi
+
 # --- build environments on the project filesystem, not in the repo / home ---
 pixi config set detached-environments "$PIXI_BASE/envs"
 
@@ -53,6 +73,23 @@ echo ">> registering Jupyter kernel"
 pixi run install-kernel
 echo ">> installing git hooks (pre-commit + nbstripout)"
 pixi run install-hooks
+
+# --- Baysor segmentation binary (shared, not per-student) ---
+# Baysor (transcript-based segmentation, driven by Sopa in Level 1) is a 1.3 GB
+# prebuilt binary staged once on the project filesystem. Sopa locates it on PATH
+# or at ~/.julia/bin/baysor; we symlink the shared copy there so nobody has to
+# download or build it. The symlink is ~1 inode and survives Baysor upgrades
+# (only the shared canonical link gets repointed).
+echo ">> linking shared Baysor binary into ~/.julia/bin"
+if [ -e "$PROJ/software/bin/baysor" ]; then
+  mkdir -p "$HOME/.julia/bin"
+  ln -sf "$PROJ/software/bin/baysor" "$HOME/.julia/bin/baysor"
+  "$HOME/.julia/bin/baysor" --version >/dev/null 2>&1 \
+    && echo "   Baysor $("$HOME/.julia/bin/baysor" --version 2>/dev/null) ready" \
+    || echo "   WARNING: Baysor symlink created but did not run — tell the instructor."
+else
+  echo "   NOTE: shared Baysor binary not found at $PROJ/software/bin/baysor — skipping (ask the instructor)."
+fi
 
 cat <<'DONE'
 
