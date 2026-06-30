@@ -14,8 +14,11 @@
 - **Data root (absolute):** `/shared/projects/tp_2630_ubordeaux_neuromics_184418/projects/C15/data/`.
   ⚠️ The repo's `FilePaths.dataset()` (`src/spatialbrain/_constants.py`) resolves to the **repo's**
   `data/`, *not* this project-filesystem root — hardcode the absolute root or extend `FilePaths`.
-- **Environment:** pixi kernel **`spatialbrain`** (CPU-only; no GPU yet — pass CPU accelerators).
-  Cellpose / Baysor / Proseg / scvi-tools+DiagVI are all installed — just select the kernel.
+- **Environment:** pixi kernel **`spatialbrain`** — **CPU-only**. The course has **no GPU access**
+  (confirmed); every step below is chosen to run on CPU (and to parallelise across cores where it
+  matters). Cellpose (**v3**, not v4), Baysor, and Proseg are installed for L1 segmentation; Harmony +
+  CellMapper + CellTypist for L2 annotation — just select the kernel. *(No scvi-tools / DiagVI / rapids
+  in the base env — the `gpu` feature was removed from `pixi.toml`.)*
 - **Notebooks** `[confirm]`**:** per level, `analysis/levelN/<NN>_<slug>_student.ipynb` +
   executed `..._solution.ipynb` (mirrors the `cajal_comp_proj` template). Student = guidance, no
   solutions; solution = fully executed.
@@ -153,7 +156,8 @@ right slot and pick the right framework per task.
      by lineage for the optional ResolVI Fig-2E-style matrix.)*
 
    Label-free on the spatial side → works pre-annotation. Reimplement ~30–40 lines (both source repos
-   unlicensed) and **cite Salas et al. + ResolVI**; document the marker-selection threshold + mixture
+   unlicensed) and **cite Salas et al. + ResolVI** (we *reimplement* the ~30–40-line metric on CPU —
+   ResolVI itself is **not** run in L1, so no scvi-tools dependency); document the marker-selection threshold + mixture
    recipe for student/solution parity. *(Stretch: `prior_shapes_key="auto"` refines the vendor prior — "does the prior matter?")*
 
 **Deliverable:** a metric-backed segmentation choice on Sample A. **Self-contained — its output is
@@ -167,10 +171,17 @@ right slot and pick the right framework per task.
    Normalize; light cross-sample integration. *Start fresh from author segmentation — do not reuse L1.*
 2. **Reference mapping / annotation** — reference = `wang2025_multiome.h5mu` RNA modality
    (transfer the **`type`** column → target the 29 MERFISH-detectable types). Taught path:
-   **DiagVI** `[pick]` (weak feature linkage: 300 panel genes vs full transcriptome; also imputes
-   the transcriptome), with **scANVI / celltypist / ingest** as baselines (any of which is a fine
-   fallback). Validate: (i) canonical markers; (ii) **held-out-gene correlation** (withhold a fixed
-   seeded subset of panel genes, impute, correlate per gene).
+   **Harmony + CellMapper** (CPU): integrate spatial + reference into a shared **Harmony** latent space
+   (`batch_key="modality"`), then CellMapper transfers labels **and imputes the transcriptome** over a
+   `pynndescent` kNN — this is CellMapper's spatial-mapping tutorial. **CellTypist** as an external
+   pretrained-reference baseline: `Developing_Human_Brain` (first-trimester — note the stage gap vs our
+   2nd-trimester→infancy) and `Adult_Human_PrefrontalCortex` (matches the PFC samples). *(Dropped:
+   DiagVI / scANVI — GPU-favoured scvi-tools; scanpy `ingest` ≈ CellMapper with a weaker latent space.)*
+   Validate: (i) canonical markers; (ii) **held-out-gene correlation** — withhold a fixed seeded subset
+   of panel genes (CellMapper masks them via `mask_var="is_train"`, so they never enter the latent
+   space), impute, correlate per gene. **⚠️ Library-size correction:** pass CellMapper's `target_libsize`
+   (per-cell sum over the *training* genes) to `map_layers` so imputed counts match each spatial cell's
+   sequencing depth — without it the held-out correlations are meaningless.
 3. **Paper reveal → reproduce panels** (critically evaluate discrepancies):
    - **Fig. 2a** cell typing in space · **Fig. 2a/b** niches (k-means on 50 spatial NNs → ~10 domains)
      + composition · **Fig. 2c** neighbourhood enrichment (`squidpy.gr.spatial_neighbors` →
@@ -187,9 +198,11 @@ right slot and pick the right framework per task.
 
 *"Ask a question the paper didn't fully answer."* Blank notebook + planning template + 15-min
 presentation (adapt the `cajal_comp_proj` L3 template — copy its planning structure). Largest block;
-students design + run their own question. **Note tooling not yet in the env** (no SCENIC+/pyscenic/
-muon in `pixi.toml` — add per chosen direction). If reusing the L1 purity metric, put it in
-`src/spatialbrain/` so L3 can import it. Directions (strongest first):
+students design + run their own question. **CPU-only** — favour implementations that **parallelise
+across cores** (or subsample) for the 232k-nucleus multiome, and expect longer runtimes than the
+GPU-based papers report. **Note tooling not yet in the env** (no SCENIC+/pyscenic/muon in `pixi.toml`
+— add per chosen direction). If reusing the L1 purity metric, put it in `src/spatialbrain/` so L3 can
+import it. Directions (strongest first):
 
 - **snATAC / multiome integration** — GRNs, peak-to-gene, motif activity (`wang2025_multiome.h5mu`
   `ATAC`: 82,505 peaks, coords in `var`; `X_wnn.umap` computed). Authors' `SCENICplus/` is the reference. *(Strong.)*
@@ -199,7 +212,10 @@ muon in `pixi.toml` — add per chosen direction). If reusing the L1 purity metr
 - **Niche parametrization** — extends the L2 niche step: vary knn/`radius`/niche count, assess
   stability. Tools: `squidpy`, or Sopa's [spatial tutorial](https://prism-oncology.github.io/sopa/tutorials/spatial/).
 - **Second reference** — annotate with an external developing-cortex atlas; compare concordance.
-- **Denoising** — run **ResolVI** (introduced as the L1 metric source) as a denoiser; relate to the L1 purity metric.
+- **Denoising** — reference-based spatial denoising, related back to the L1 purity metric. Prefer
+  **CPU-bound** methods: **SPLIT** (*Nat. Methods* 2026, RCDT-based correction of transcript
+  spillover/contamination — no deep net) or similar. *(ResolVI is possible but scvi-tools/GPU-favoured
+  — opt-in, CPU-slow.)*
 - **Disease-risk mapping** — GWAS risk onto spatial types/niches. *(Trickier; scope carefully.)*
 
 **The paper's own open questions (ready-made anchors):**
