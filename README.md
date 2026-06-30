@@ -83,10 +83,11 @@ Raw data is staged once in a shared location (not copied per student); your repo
 holds smaller processed outputs. Paths are exposed via `from spatialbrain import FilePaths`.
 *(Specifics to be added.)*
 
-## 6. GPU
+## 6. Compute
 
-Once the GPU partition is enabled for the course: `pixi install -e gpu` (CUDA build of JAX +
-rapids-singlecell).
+This is a **CPU-only** course — there is no GPU partition. Everything is designed to run on CPU:
+segmentation parallelises across cores via Sopa, and label transfer uses CPU k-NN. Request a few
+CPUs and ~16–32 GB via OnDemand or Slurm; no `gpu` environment is needed or provided.
 
 ## Reference
 
