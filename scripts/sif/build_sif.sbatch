@@ -31,7 +31,8 @@ CONDA_PACK="$PROJ/projects/C15/pixi/tools/bin/conda-pack"   # one-time setup: se
 
 REPO_SRC="${SPATIALBRAIN_REPO_SRC:-$(git -C "${SLURM_SUBMIT_DIR:-$PWD}" rev-parse --show-toplevel)/src}"
 # pixi's detached env for this project is worktree-hashed; default to the newest.
-PREFIX="${SPATIALBRAIN_PREFIX:-$(ls -td "$PROJ"/pixi/envs/spatialbrain-*/envs/default 2>/dev/null | head -1)}"
+# NB: the pixi base lives under projects/C15 (same as CONDA_PACK above), not $PROJ/pixi.
+PREFIX="${SPATIALBRAIN_PREFIX:-$(ls -td "$PROJ"/projects/C15/pixi/envs/spatialbrain-*/envs/default 2>/dev/null | head -1)}"
 SIF="${SPATIALBRAIN_SIF:-$PROJ/containers/marius/spatialbrain.sif}"
 
 [ -x "$CONDA_PACK" ] || { echo "ERROR: conda-pack missing at $CONDA_PACK (see README: one-time tool env)"; exit 1; }
