@@ -17,12 +17,13 @@ Tick items off (or clear the list) once a rebuild lands them.
 
 ## Pending
 
-- [ ] **`FilePaths` runtime repo-root resolution** — `src/spatialbrain/_constants.py`
-  ([#9](https://github.com/quadbio/cajal-project15-spatial-brain/pull/9)). The baked
-  package still uses the old `_find_root`, so `FilePaths.DATA` points inside the
-  read-only container and dataset writes (e.g. `sq.datasets.merfish()`) fail. Needs
-  baking before the "Spatial Brain (SIF)" kernel writes to `data/` correctly.
+_(none — all committed env changes are baked into the live SIF.)_
 
 ## Last baked
 
+- 2026-07-01 — rebuild: baked the `FilePaths` runtime repo-root resolution
+  (`src/spatialbrain/_constants.py`, [#9](https://github.com/quadbio/cajal-project15-spatial-brain/pull/9)).
+  Verified in-container: from a repo cwd `FilePaths.DATA` now resolves to the writable
+  `data/` (not inside `/opt/env`), and `$SPATIALBRAIN_ROOT` override is honored. No
+  dependency change, so the pixi env was reused as-is (source-only re-bake).
 - 2026-07-01 — initial build (scanpy 1.12.1, torch 2.8.0+cpu).
