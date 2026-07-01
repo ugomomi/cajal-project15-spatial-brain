@@ -2,23 +2,39 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
-# Files that mark the repository root, searched for upward from this module.
+# Files that mark the repository root, searched for upward from a start directory.
 _ROOT_MARKERS = ("pixi.toml", ".git")
 
 
-def _find_root(start: Path) -> Path:
-    """Locate the repo root by walking upward until a marker file is found.
-
-    Falls back to the fixed ``src/<package>/`` layout (three levels up) when no
-    marker is present, e.g. for a non-editable installed copy.
-    """
-    for parent in (start, *start.parents):
+def _search_up(base: Path) -> Path | None:
+    """Return the nearest ancestor of ``base`` (inclusive) holding a root marker."""
+    for parent in (base, *base.parents):
         if any((parent / marker).exists() for marker in _ROOT_MARKERS):
             return parent
-    return start.parents[2]
+    return None
+
+
+def _find_root(start: Path) -> Path:
+    """Locate the repo root, resolving it at runtime rather than from install path.
+
+    Order of resolution:
+
+    1. ``$SPATIALBRAIN_ROOT`` if set — an explicit override.
+    2. Marker search upward from the **current working directory** — this is what
+       makes it correct when the package is baked into a read-only container (an
+       Apptainer SIF): ``start`` then points inside the image, but the notebook's
+       cwd is the real repo, so ``FilePaths.DATA`` lands in the writable ``data/``.
+    3. Marker search upward from this module (``start``) — editable/dev installs.
+    4. Fallback to the fixed ``src/<package>/`` layout (three levels up).
+    """
+    override = os.environ.get("SPATIALBRAIN_ROOT")
+    if override:
+        return Path(override).expanduser().resolve()
+    return _search_up(Path.cwd()) or _search_up(start) or start.parents[2]
 
 
 @dataclass(frozen=True)

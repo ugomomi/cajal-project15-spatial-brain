@@ -69,8 +69,9 @@ pixi config set detached-environments "$PIXI_BASE/envs"
 # --- build + register ---
 echo ">> pixi install (a few minutes the first time)"
 pixi install
-echo ">> registering Jupyter kernel"
-pixi run install-kernel
+echo ">> registering Jupyter kernels"
+pixi run install-kernel        # pixi env kernel (dev; slower cold-start)
+pixi run install-kernel-sif    # fast single-file container kernel (recommended)
 echo ">> installing git hooks (pre-commit)"
 pixi run install-hooks
 
@@ -96,6 +97,7 @@ cat <<'DONE'
 Setup complete.
   - Open a NEW shell (or `source ~/.bashrc`) so the cache settings load.
   - Run notebooks via Open OnDemand JupyterLab and pick the
-    "Spatial Brain (Project 15)" kernel:
+    "Spatial Brain (SIF)" kernel (fast — loads in seconds):
     https://ondemand.cluster.france-bioinformatique.fr
+    ("Spatial Brain (Project 15)" is the slower pixi kernel, kept for env dev.)
 DONE

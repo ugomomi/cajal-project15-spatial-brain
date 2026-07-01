@@ -1,0 +1,17 @@
+{
+    "argv": [
+        "apptainer",
+        "exec",
+        "--bind",
+        "/shared",
+        "/shared/projects/tp_2630_ubordeaux_neuromics_184418/containers/marius/spatialbrain.sif",
+        "python",
+        "-m",
+        "ipykernel_launcher",
+        "-f",
+        "{connection_file}"
+    ],
+    "display_name": "Spatial Brain (SIF)",
+    "language": "python",
+    "metadata": { "debugger": true }
+}

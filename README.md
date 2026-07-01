@@ -55,7 +55,10 @@ Jupyter kernel and the git hooks. A few minutes the first time.
 Everything runs in your browser, on a compute node — no SSH key or tunnel needed.
 [OnDemand](https://ondemand.cluster.france-bioinformatique.fr) → **Interactive Apps**:
 
-- **JupyterLab** — for notebooks; select the project's kernel once the session starts.
+- **JupyterLab** — for notebooks; once the session starts, select the
+  **`Spatial Brain (SIF)`** kernel. It loads the environment from a single shared
+  container file, so it starts in seconds (the older `Spatial Brain (Project 15)`
+  pixi kernel still works but cold-starts slowly — it's kept for env development).
 - **Visual Studio Code** — a full IDE in the browser.
 
 Request resources (account `tp_2630_ubordeaux_neuromics_184418`, partition `fast`, a few
