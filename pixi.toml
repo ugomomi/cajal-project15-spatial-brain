@@ -20,6 +20,8 @@ test = "pytest"
 rename = { cmd = "python scripts/rename_package.py", description = "Rename the placeholder package/project (run once on a fresh clone; see scripts/rename_package.py)" }
 install-kernel = { cmd = "python -m ipykernel install --user --name=spatialbrain --display-name='Spatial Brain (Project 15)' && python scripts/patch_kernel_env.py", description = "Register the Jupyter kernel and patch its LD_LIBRARY_PATH so the env's libstdc++ loads first (avoids torch-vs-icu CXXABI clashes)." }
 install-hooks = { cmd = "pre-commit install --install-hooks", description = "Install pre-commit hooks (run once per clone)" }
+build-sif = { cmd = "sbatch scripts/sif/build_sif.sbatch", description = "Submit the Slurm job that (re)builds the fast-loading Apptainer SIF from the pixi env (see scripts/sif/README.md)." }
+install-kernel-sif = { cmd = "jupyter kernelspec install scripts/sif/kernel --name spatialbrain-sif --user --replace", description = "Register the fast 'Spatial Brain (SIF)' Jupyter kernel that loads the shared container env in seconds (the recommended kernel for students)." }
 
 [dependencies]
 python = "3.12.*"

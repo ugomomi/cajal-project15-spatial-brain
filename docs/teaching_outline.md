@@ -11,14 +11,17 @@
 
 ## Conventions & gotchas — read first (apply to every level)
 
-- **Data root (absolute):** `/shared/projects/tp_2630_ubordeaux_neuromics_184418/projects/C15/data/`.
-  ⚠️ The repo's `FilePaths.dataset()` (`src/spatialbrain/_constants.py`) resolves to the **repo's**
-  `data/`, *not* this project-filesystem root — hardcode the absolute root or extend `FilePaths`.
-- **Environment:** pixi kernel **`spatialbrain`** — **CPU-only**. The course has **no GPU access**
-  (confirmed); every step below is chosen to run on CPU (and to parallelise across cores where it
-  matters). Cellpose (**v3**, not v4), Baysor, and Proseg are installed for L1 segmentation; Harmony +
-  CellMapper + CellTypist for L2 annotation — just select the kernel. *(No scvi-tools / DiagVI / rapids
-  in the base env — the `gpu` feature was removed from `pixi.toml`.)*
+- **Data root:** the repo's `FilePaths.dataset()` (`src/spatialbrain/_constants.py`) resolves to the
+  **repo's** `data/`. It now finds the repo root at runtime (cwd → `$SPATIALBRAIN_ROOT` override →
+  install path), so it works even from the baked SIF kernel. To point data at the project filesystem
+  instead, set `SPATIALBRAIN_ROOT=/shared/projects/tp_2630_ubordeaux_neuromics_184418/projects/C15`.
+- **Environment:** run the **`Spatial Brain (SIF)`** kernel — the whole env packed into one shared
+  container file, so it loads in seconds (vs. the pixi kernel's slow cold-start off the network FS).
+  See `scripts/sif/README.md`. **CPU-only** — the course has **no GPU access** (confirmed); every step
+  below is chosen to run on CPU (and to parallelise across cores where it matters). Cellpose (**v3**,
+  not v4), Baysor, and Proseg are installed for L1 segmentation; Harmony + CellMapper + CellTypist for
+  L2 annotation. *(No scvi-tools / DiagVI / rapids in the base env — the `gpu` feature was removed from
+  `pixi.toml`.)*
 - **Notebooks** `[confirm]`**:** per level, `analysis/levelN/<NN>_<slug>_student.ipynb` +
   executed `..._solution.ipynb` (mirrors the `cajal_comp_proj` template). Student = guidance, no
   solutions; solution = fully executed.
