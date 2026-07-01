@@ -19,9 +19,9 @@
   container file, so it loads in seconds (vs. the pixi kernel's slow cold-start off the network FS).
   See `scripts/sif/README.md`. **CPU-only** — the course has **no GPU access** (confirmed); every step
   below is chosen to run on CPU (and to parallelise across cores where it matters). Cellpose (**v3**,
-  not v4), Baysor, and Proseg are installed for L1 segmentation; Harmony + CellMapper + CellTypist for
-  L2 annotation. *(No scvi-tools / DiagVI / rapids in the base env — the `gpu` feature was removed from
-  `pixi.toml`.)*
+  not v4), Baysor, and Proseg are installed for L1 segmentation; **CellMapper (fast-CCA)** + CellTypist
+  for L2 annotation (Harmony is installed but not used — benchmarked ~8× slower for no gain; see L2 §2).
+  *(No scvi-tools / DiagVI / rapids in the base env — the `gpu` feature was removed from `pixi.toml`.)*
 - **Notebooks** `[confirm]`**:** per level, `analysis/levelN/<NN>_<slug>_student.ipynb` +
   executed `..._solution.ipynb` (mirrors the `cajal_comp_proj` template). Student = guidance, no
   solutions; solution = fully executed.
