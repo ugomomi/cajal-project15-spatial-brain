@@ -42,8 +42,9 @@ apptainer exec --bind /shared "$SIF" python my_analysis.py
 apptainer exec --bind /shared "$SIF" jupyter lab
 ```
 
-Jupyter kernels — register with `pixi run install-kernel-sif` (done by
-`cluster_setup.sh`):
+Jupyter kernels — the student setup (`scripts/cluster_setup.sh`) registers the SIF kernel by
+copying `scripts/sif/kernel/kernel.json` into `~/.local/share/jupyter/kernels/` (no pixi needed);
+`pixi run install-kernel-sif` does the same via a pixi task if you have the env:
 - **Spatial Brain (SIF)** — the kernel **students should use**. Self-contained and
   clone-agnostic (baked `spatialbrain` package, fixed SIF path); template in
   `scripts/sif/kernel/kernel.json`.

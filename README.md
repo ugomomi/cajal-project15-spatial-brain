@@ -33,28 +33,30 @@ gh repo clone <your-username>/cajal-project15-spatial-brain
 cd cajal-project15-spatial-brain
 ```
 
-## 2. Set up — one command
+## 2. Set up — one fast command (nothing to build)
 
 ```bash
-bash cluster_setup.sh
+bash scripts/cluster_setup.sh
 ```
 
-This registers the **`Spatial Brain (SIF)`** Jupyter kernel — the environment every notebook runs
-on — and installs the git hooks. A minute or two.
+This registers the **`Spatial Brain (SIF)`** Jupyter kernel and links the shared Baysor binary —
+that's it, it takes **seconds**. There's no environment to build: the whole scientific stack
+(scanpy, squidpy, spatialdata, sopa, cellpose, proseg, cellmapper, …) is pre-packed into **one
+shared container file** on the project filesystem, and this kernel just points at it. Every
+notebook (Levels 0–3) runs on it. See [`scripts/sif/README.md`](scripts/sif/README.md) for how the
+container is built.
 
-> **You don't build the environment yourself.** The whole scientific stack (scanpy, squidpy,
-> spatialdata, sopa, cellpose, cellmapper, …) is pre-packed into **one shared container file** on
-> the project filesystem, and the `Spatial Brain (SIF)` kernel just points at it — no big install,
-> and it loads in seconds. All the notebooks (Levels 0–3) use this kernel. See
-> [`scripts/sif/README.md`](scripts/sif/README.md) for how the container is built.
+> **Optional — a personal pixi environment (for the curious).** Only if you want to add or modify
+> packages (`pixi add …`) or use the pixi-based dev kernel:
 >
-> **Optional — your own pixi environment.** `cluster_setup.sh` *also* builds you a personal
-> [pixi](https://pixi.sh) environment (this is the "a few minutes the first time" part). You
-> **don't need it to work through the notebooks** — they all run on the SIF kernel — so you can
-> ignore it unless you want to `pixi add` packages and experiment. It lives on the **project
-> filesystem**, not your home directory (whose ~100,000-file quota a scientific env would blow),
-> and hardlinks a shared package cache so it costs only ~17k files; `cluster_setup.sh` sets this
-> up for you — don't repoint the cache at home.
+> ```bash
+> bash scripts/build_pixi_env.sh
+> ```
+>
+> This builds a full [pixi](https://pixi.sh) environment (a few minutes) on the **project
+> filesystem** — not your home directory, whose ~100,000-file quota a scientific env would blow —
+> and installs the git hooks. You **don't need it to run the notebooks**; the SIF kernel above is
+> all that's required.
 
 ## 3. Run your analysis — Open OnDemand (recommended)
 
@@ -136,7 +138,7 @@ CPUs and ~16–32 GB via OnDemand or Slurm; no `gpu` environment is needed or pr
 - **Environment:** `pixi.toml` (+ `pixi.lock` for exact, reproducible versions) —
   [pixi docs](https://pixi.sh/latest/).
 - **Helper package:** `src/spatialbrain/` — `FilePaths` for project data paths.
-- **Code quality:** [pre-commit](https://pre-commit.com/) hooks (set up by `cluster_setup.sh`) —
+- **Code quality:** [pre-commit](https://pre-commit.com/) hooks (set up by `scripts/build_pixi_env.sh`) —
   [ruff](https://docs.astral.sh/ruff/) lint/format.
 - **Science:** [scanpy](https://scanpy.readthedocs.io) · [squidpy](https://squidpy.readthedocs.io) ·
   [spatialdata](https://spatialdata.scverse.org) · [single-cell best practices](https://www.sc-best-practices.org/).

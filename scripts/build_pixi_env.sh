@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# One-time setup for this project on the IFB Core Cluster. Run from the repo root:
+# OPTIONAL: build a personal pixi environment. You do NOT need this to run the course
+# notebooks — that is what the SIF kernel from `scripts/cluster_setup.sh` is for. Use this
+# only if you want to add/modify packages (`pixi add ...`) or use the pixi-based
+# "Spatial Brain (Project 15)" dev kernel. A few minutes the first time. Run from anywhere:
 #
-#     bash cluster_setup.sh
+#     bash scripts/build_pixi_env.sh
 #
-# Why this script exists: the cluster home (~) has a 100,000-file (inode) quota
-# that a scientific pixi/conda environment would exceed. This script puts the
-# pixi environment and all caches on the large project filesystem instead, then
-# builds the environment, registers the Jupyter kernel, and installs git hooks.
+# Why a script: the cluster home (~) has a ~100,000-file (inode) quota that a scientific
+# pixi/conda environment would exceed, so this puts the environment and all caches on the
+# large project filesystem instead, then builds the env and registers the pixi dev kernel.
 set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."   # repo root — pixi needs pixi.toml here
 
 # --- project filesystem location (shared, 1,000,000-inode quota) ---
 PROJ=/shared/projects/tp_2630_ubordeaux_neuromics_184418/projects/C15
@@ -66,38 +69,20 @@ fi
 # --- build environments on the project filesystem, not in the repo / home ---
 pixi config set detached-environments "$PIXI_BASE/envs"
 
-# --- build + register ---
+# --- build + register the pixi dev kernel and git hooks ---
 echo ">> pixi install (a few minutes the first time)"
 pixi install
-echo ">> registering Jupyter kernels"
-pixi run install-kernel        # pixi env kernel (dev; slower cold-start)
-pixi run install-kernel-sif    # fast single-file container kernel (recommended)
+echo ">> registering the pixi dev kernel ('Spatial Brain (Project 15)'; slower cold-start)"
+pixi run install-kernel
 echo ">> installing git hooks (pre-commit)"
 pixi run install-hooks
 
-# --- Baysor segmentation binary (shared, not per-student) ---
-# Baysor (transcript-based segmentation, driven by Sopa in Level 1) is a 1.3 GB
-# prebuilt binary staged once on the project filesystem. Sopa locates it on PATH
-# or at ~/.julia/bin/baysor; we symlink the shared copy there so nobody has to
-# download or build it. The symlink is ~1 inode and survives Baysor upgrades
-# (only the shared canonical link gets repointed).
-echo ">> linking shared Baysor binary into ~/.julia/bin"
-if [ -e "$PROJ/software/bin/baysor" ]; then
-  mkdir -p "$HOME/.julia/bin"
-  ln -sf "$PROJ/software/bin/baysor" "$HOME/.julia/bin/baysor"
-  "$HOME/.julia/bin/baysor" --version >/dev/null 2>&1 \
-    && echo "   Baysor $("$HOME/.julia/bin/baysor" --version 2>/dev/null) ready" \
-    || echo "   WARNING: Baysor symlink created but did not run — tell the instructor."
-else
-  echo "   NOTE: shared Baysor binary not found at $PROJ/software/bin/baysor — skipping (ask the instructor)."
-fi
-
 cat <<'DONE'
 
-Setup complete.
+Pixi environment ready.
   - Open a NEW shell (or `source ~/.bashrc`) so the cache settings load.
-  - Run notebooks via Open OnDemand JupyterLab and pick the
-    "Spatial Brain (SIF)" kernel (fast — loads in seconds):
-    https://ondemand.cluster.france-bioinformatique.fr
-    ("Spatial Brain (Project 15)" is the slower pixi kernel, kept for env dev.)
+  - You can now `pixi add --pypi <pkg>` to experiment, and use the pixi
+    "Spatial Brain (Project 15)" kernel in OnDemand (it cold-starts slowly).
+  - To run the course notebooks, the fast "Spatial Brain (SIF)" kernel from
+    scripts/cluster_setup.sh is still the recommended choice.
 DONE
