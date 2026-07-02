@@ -3,12 +3,12 @@
 **CAJAL Neuromics 2026 (Bordeaux).** Reconstruct the spatial cellular architecture of the
 brain from high-plex, image-based spatial transcriptomics: QC → cell segmentation →
 cell-type annotation by label transfer from a scRNA-seq reference atlas → spatial niches →
-region-specific cell–cell communication. Notebook-first, [pixi](https://pixi.sh)-managed,
-runs on the IFB Core Cluster.
+region-specific cell–cell communication. Notebook-first and CPU-only, run from a single
+shared container on the IFB Core Cluster.
 
 **Links:** [IFB docs](https://doc.cluster.france-bioinformatique.fr/) ·
 [OnDemand (run notebooks)](https://ondemand.cluster.france-bioinformatique.fr) ·
-[pixi](https://pixi.sh) · [scanpy](https://scanpy.readthedocs.io) ·
+[scanpy](https://scanpy.readthedocs.io) ·
 [squidpy](https://squidpy.readthedocs.io) · [spatialdata](https://spatialdata.scverse.org)
 
 ## 0. One-time access
@@ -46,17 +46,21 @@ shared container file** on the project filesystem, and this kernel just points a
 notebook (Levels 0–3) runs on it. See [`scripts/sif/README.md`](scripts/sif/README.md) for how the
 container is built.
 
-> **Optional — a personal pixi environment (for the curious).** Only if you want to add or modify
-> packages (`pixi add …`) or use the pixi-based dev kernel:
->
-> ```bash
-> bash scripts/build_pixi_env.sh
-> ```
->
-> This builds a full [pixi](https://pixi.sh) environment (a few minutes) on the **project
-> filesystem** — not your home directory, whose ~100,000-file quota a scientific env would blow —
-> and installs the git hooks. You **don't need it to run the notebooks**; the SIF kernel above is
-> all that's required.
+### Need an extra Python package?
+
+The container is read-only and shared, so don't try to rebuild it — add packages **just for
+yourself**:
+
+```bash
+bash scripts/sif_pip.sh <package> [<package> ...]     # e.g. harmonypy pertpy
+```
+
+This installs into your personal user-site (`~/.local`), which the `Spatial Brain (SIF)` kernel
+**already sees** — so your packages show up in notebooks with no kernel or config changes (restart
+the kernel afterwards to pick them up). It builds nothing and never touches the project filesystem.
+The container is already very complete, so most packages just reuse what's there; steer clear of
+ones that re-pull a whole compiled stack (`jax`, `tensorflow`), which are large and rarely needed.
+`bash scripts/sif_pip.sh list` shows what you've added.
 
 ## 3. Run your analysis — Open OnDemand (recommended)
 
@@ -65,8 +69,7 @@ Everything runs in your browser, on a compute node — no SSH key or tunnel need
 
 - **JupyterLab** — for notebooks; once the session starts, select the
   **`Spatial Brain (SIF)`** kernel. It loads the environment from a single shared
-  container file, so it starts in seconds (the older `Spatial Brain (Project 15)`
-  pixi kernel still works but cold-starts slowly — it's kept for env development).
+  container file, so it starts in seconds.
 - **Visual Studio Code** — a full IDE in the browser.
 
 Request resources (account `tp_2630_ubordeaux_neuromics_184418`, partition `fast`, a few
@@ -87,8 +90,9 @@ from §0) for editing and git, and run notebooks / heavy compute via OnDemand or
   ```bash
   git add -A && git commit -m "..." && git push
   ```
-- Add a package **PyPI-first**: `pixi add --pypi <pkg>` (use conda only for hard-to-build
-  compiled deps), then commit `pixi.toml` + `pixi.lock` so everyone stays in sync.
+- Need a package the container doesn't have? Add it just for yourself with
+  `bash scripts/sif_pip.sh <pkg>` — it installs into your `~/.local`, which the SIF kernel
+  already sees (restart the kernel afterwards). See [§2](#need-an-extra-python-package).
 
 ## 5. Data
 
@@ -135,10 +139,12 @@ CPUs and ~16–32 GB via OnDemand or Slurm; no `gpu` environment is needed or pr
 
 ## Reference
 
-- **Environment:** `pixi.toml` (+ `pixi.lock` for exact, reproducible versions) —
-  [pixi docs](https://pixi.sh/latest/).
 - **Helper package:** `src/spatialbrain/` — `FilePaths` for project data paths.
-- **Code quality:** [pre-commit](https://pre-commit.com/) hooks (set up by `scripts/build_pixi_env.sh`) —
-  [ruff](https://docs.astral.sh/ruff/) lint/format.
+- **Container:** the whole stack is pre-packed into one shared Apptainer image; see
+  [`scripts/sif/README.md`](scripts/sif/README.md) for how it's built. You don't need
+  [pixi](https://pixi.sh) to run the course — the `Spatial Brain (SIF)` kernel is self-contained.
+- **Repo contributors** (not needed to run the course): `scripts/build_pixi_env.sh` builds the
+  [pixi](https://pixi.sh) dev environment (`pixi.toml` + `pixi.lock`) and installs the
+  [pre-commit](https://pre-commit.com/) / [ruff](https://docs.astral.sh/ruff/) git hooks.
 - **Science:** [scanpy](https://scanpy.readthedocs.io) · [squidpy](https://squidpy.readthedocs.io) ·
   [spatialdata](https://spatialdata.scverse.org) · [single-cell best practices](https://www.sc-best-practices.org/).
