@@ -33,22 +33,28 @@ gh repo clone <your-username>/cajal-project15-spatial-brain
 cd cajal-project15-spatial-brain
 ```
 
-## 2. Set up the environment — one command
+## 2. Set up — one command
 
 ```bash
 bash cluster_setup.sh
 ```
 
-Installs pixi (if needed) and builds the project environment. **Why a script?** The cluster
-home directory has a 100,000-*file* quota that a scientific environment would blow, so the
-script puts the environment and caches on the large **project filesystem**, then registers a
-Jupyter kernel and the git hooks. A few minutes the first time.
+This registers the **`Spatial Brain (SIF)`** Jupyter kernel — the environment every notebook runs
+on — and installs the git hooks. A minute or two.
 
-> **Env model:** each student gets their **own** environment (so you can `pixi add` and
-> experiment freely), but the package **cache is shared** on the project filesystem — packages
-> download once and each env hardlinks them, so an env costs only ~17k files instead of ~100k.
-> This only works because the cache stays on the project filesystem, which `cluster_setup.sh`
-> handles — don't override it to point at home.
+> **You don't build the environment yourself.** The whole scientific stack (scanpy, squidpy,
+> spatialdata, sopa, cellpose, cellmapper, …) is pre-packed into **one shared container file** on
+> the project filesystem, and the `Spatial Brain (SIF)` kernel just points at it — no big install,
+> and it loads in seconds. All the notebooks (Levels 0–3) use this kernel. See
+> [`scripts/sif/README.md`](scripts/sif/README.md) for how the container is built.
+>
+> **Optional — your own pixi environment.** `cluster_setup.sh` *also* builds you a personal
+> [pixi](https://pixi.sh) environment (this is the "a few minutes the first time" part). You
+> **don't need it to work through the notebooks** — they all run on the SIF kernel — so you can
+> ignore it unless you want to `pixi add` packages and experiment. It lives on the **project
+> filesystem**, not your home directory (whose ~100,000-file quota a scientific env would blow),
+> and hardlinks a shared package cache so it costs only ~17k files; `cluster_setup.sh` sets this
+> up for you — don't repoint the cache at home.
 
 ## 3. Run your analysis — Open OnDemand (recommended)
 
@@ -71,7 +77,9 @@ from §0) for editing and git, and run notebooks / heavy compute via OnDemand or
 
 ## 4. Daily workflow
 
-- Notebooks live in `analysis/`, named `INITIALS-YYYY-MM-DD_description.ipynb`.
+- Course notebooks live in `analysis/levelN/`, paired as `NN_slug_student.ipynb` (your working
+  copy to fill in) and `NN_slug_solution.ipynb` (the executed reference). Add any notebooks of
+  your own alongside them with a short, descriptive name.
 - Notebooks are committed **with** their outputs — so executed solution notebooks stay readable.
 - Commit & push to **your fork**:
   ```bash
@@ -82,9 +90,40 @@ from §0) for editing and git, and run notebooks / heavy compute via OnDemand or
 
 ## 5. Data
 
-Raw data is staged once in a shared location (not copied per student); your repo's `data/`
-holds smaller processed outputs. Paths are exposed via `from spatialbrain import FilePaths`.
-*(Specifics to be added.)*
+**Staged once, read-only, shared.** The large inputs are staged for the whole course under
+
+```
+/shared/projects/tp_2630_ubordeaux_neuromics_184418/projects/C15/data/
+```
+
+Read from there, but **never write to it and never copy it into your repo** — several people run in
+parallel off the same files. The notebooks already point at this location in their setup cells; the
+main inputs are:
+
+| Path (under the data root above) | Level | What it is |
+|---|---|---|
+| `wang2025_merfish/processed/UCSF2018-003-MFG_baseline.zarr` | L1 | one imaged tissue section (stains + transcripts + vendor cells) to segment |
+| `wang2025_merfish/processed/wang2025_merfish_cells_student.h5ad` | L2 | the spatial cell cohort (reference labels stripped — you rebuild them) |
+| `wang2025_multiome/processed/wang2025_multiome_rna.h5ad` | L2/L3 | the single-cell RNA reference atlas |
+| `wang2025_multiome/processed/wang2025_multiome_atac.h5ad` | L3 | the matched ATAC modality (16 GB — open `backed="r"` and subset before loading) |
+
+*(A couple more files unlock at the Level 2 reveal; the notebooks introduce them where relevant.)*
+
+**Your outputs go in your repo.** Anything you create — processed objects, figures — goes in the
+repo's git-ignored `data/` and `figures/`, addressed through the path helper so you never hard-code
+paths:
+
+```python
+from spatialbrain import FilePaths
+
+FilePaths.DATA                                     # -> <repo>/data
+FilePaths.FIGURES                                  # -> <repo>/figures
+FilePaths.dataset("wang2025_merfish").processed    # your per-dataset output folder (created on demand)
+```
+
+`FilePaths` resolves the repo root at runtime from your working directory, so it works whether you
+run under the SIF kernel or a local checkout. To point outputs elsewhere, set the
+`SPATIALBRAIN_ROOT` environment variable.
 
 ## 6. Compute
 
